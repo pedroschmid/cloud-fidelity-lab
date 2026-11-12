@@ -34,3 +34,12 @@ tf-apply:
 
 tf-destroy:
 	./scripts/terraform.sh destroy
+
+.PHONY: test-contracts lint-python
+
+test-contracts:
+	./scripts/test-contracts.sh
+
+lint-python:
+	.venv/bin/ruff check tests/
+	.venv/bin/ruff format --check tests/
