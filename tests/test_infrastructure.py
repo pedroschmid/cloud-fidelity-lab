@@ -35,3 +35,22 @@ def test_artifacts_bucket_blocks_public_access(s3_client, bucket_name):
         "BlockPublicPolicy": True,
         "RestrictPublicBuckets": True,
     }
+
+
+@pytest.mark.contract
+def test_artifacts_bucket_uses_sse_s3_default_encryption(s3_client, bucket_name):
+    response = s3_client.get_bucket_encryption(Bucket=bucket_name)
+
+    rules = response["ServerSideEncryptionConfiguration"]["Rules"]
+
+    assert len(rules) == 1
+    encryption = rules[0]["ApplyServerSideEncryptionByDefault"]
+    assert encryption["SSEAlgorithm"] == "AES256"
+    assert not encryption.get("KMSMasterKeyID")
+
+
+@pytest.mark.contract
+def test_artifacts_bucket_has_versioning_enabled(s3_client, bucket_name):
+    response = s3_client.get_bucket_versioning(Bucket=bucket_name)
+
+    assert response.get("Status") == "Enabled"
