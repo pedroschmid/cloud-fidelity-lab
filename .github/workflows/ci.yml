@@ -1,0 +1,85 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  contracts:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+
+    defaults:
+      run:
+        shell: bash
+
+    env:
+      TF_IN_AUTOMATION: "true"
+      TF_INPUT: "false"
+      AWS_EC2_METADATA_DISABLED: "true"
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - name: Set up Python
+        uses: actions/setup-python@v7
+        with:
+          python-version: "3.14"
+
+      - name: Set up Terraform
+        uses: hashicorp/setup-terraform@v4
+        with:
+          terraform_version: "1.14.6"
+          terraform_wrapper: false
+
+      - name: Install Python dependencies
+        run: |
+          python -m venv .venv
+          .venv/bin/python -m pip install -e ".[test]"
+
+      - name: Check Python and Terraform formatting
+        run: |
+          make lint-python
+          terraform fmt -check -recursive infra/
+          git diff --check
+
+      - name: Start AWS Emulator
+        run: make up
+
+      - name: Initialize and validate Terraform
+        run: |
+          ./scripts/terraform.sh init -input=false -lockfile=readonly
+          make tf-validate
+
+      - name: Plan and apply to AWS Emulator
+        run: |
+          ./scripts/terraform.sh plan -input=false -out=ci.tfplan
+          ./scripts/terraform.sh apply -input=false ci.tfplan
+
+      - name: Run infrastructure contracts
+        run: make test-contracts
+
+      - name: Verify Terraform idempotence
+        run: ./scripts/terraform.sh plan -input=false -detailed-exitcode
+
+      - name: Show emulator logs on failure
+        if: failure()
+        run: |
+          if docker container inspect cloud-fidelity-emulator >/dev/null 2>&1; then
+            docker logs --tail 200 cloud-fidelity-emulator
+          fi
+
+      - name: Remove CI emulator container
+        if: always()
+        run: |
+          if docker container inspect cloud-fidelity-emulator >/dev/null 2>&1; then
+            docker rm -f cloud-fidelity-emulator
+          fi
