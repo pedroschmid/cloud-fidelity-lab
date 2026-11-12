@@ -21,3 +21,17 @@ def test_artifacts_bucket_is_discoverable(s3_client, bucket_name):
 def test_bucket_name_follows_naming_convention(bucket_name):
     assert bucket_name.startswith("cloud-fidelity-lab-")
     assert bucket_name.endswith("-artifacts")
+
+
+@pytest.mark.contract
+def test_artifacts_bucket_blocks_public_access(s3_client, bucket_name):
+    response = s3_client.get_public_access_block(Bucket=bucket_name)
+
+    configuration = response["PublicAccessBlockConfiguration"]
+
+    assert configuration == {
+        "BlockPublicAcls": True,
+        "IgnorePublicAcls": True,
+        "BlockPublicPolicy": True,
+        "RestrictPublicBuckets": True,
+    }
