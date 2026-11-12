@@ -1,0 +1,36 @@
+# Terraform
+**/.terraform/*
+*.tfstate
+*.tfstate.*
+*.tfplan
+*.tfvars
+!*.tfvars.example
+.terraform.lock.hcl
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+.pytest_cache/
+.ruff_cache/
+*.egg-info/
+
+# Test reports
+.coverage
+htmlcov/
+reports/
+junit.xml
+
+# Environment
+.env
+.env.*
+!.env.example
+
+# IDE / OS
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
