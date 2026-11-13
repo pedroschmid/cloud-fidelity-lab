@@ -21,19 +21,7 @@ The CI pipeline builds a fresh emulated environment, provisions the infrastructu
 
 ## Architecture
 
-```mermaid
-flowchart LR
-    Dev["Developer / WSL2"] --> Scripts["Make targets and shell scripts"]
-    CI["GitHub Actions / Ubuntu"] --> Scripts
-    Scripts --> TF["Terraform"]
-    Scripts --> Tests["Pytest + Boto3"]
-    TF -->|"Provision and refresh over HTTPS"| Emulator
-    Tests -->|"Assert API contracts over HTTPS"| Emulator
-    subgraph Docker["Docker container"]
-        Emulator["AWS Emulator :9297"]
-        Emulator --> S3["S3 bucket and security configuration"]
-    end
-```
+![Cloud Fidelity Lab architecture](docs/images/cloud-fidelity-lab.png)
 
 The host exposes the emulator at `https://127.0.0.1:9297`. Terraform and Boto3 use the emulator's generated credentials and CA certificate.
 
